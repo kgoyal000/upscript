@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/processing.js/1.4.1/processing-api.min.js"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pdf to Jpeg</title>
+  <style>
+    canvas {
+       border: 5px solid;
+       width: 50% !important;
+       height: auto;
+    }
+ 
+    .loader,
+    .loader:before,
+    .loader:after {
+       border-radius: 50%;
+       width: 2.5em;
+       height: 2.5em;
+       -webkit-animation-fill-mode: both;
+       animation-fill-mode: both;
+       -webkit-animation: load7 1.8s infinite ease-in-out;
+       animation: load7 1.8s infinite ease-in-out;
+    }
+ 
+    .loader {
+       display: none;
+       color: rgb(99, 96, 96);
+       font-size: 10px;
+       opacity: 1 !important;
+       margin: auto;
+       position: fixed;
+       top: 45%;
+       left: 50%;
+       transform: translate(-50%, -50%);
+       text-indent: -9999em;
+       -webkit-transform: translateZ(0);
+       -ms-transform: translateZ(0);
+       transform: translateZ(0);
+       -webkit-animation-delay: -0.16s;
+       animation-delay: -0.16s;
+    }
+ 
+    .loader:before,
+    .loader:after {
+       content: '';
+       position: absolute;
+       top: 0;
+    }
+ 
+    .loader:before {
+       left: -3.5em;
+       -webkit-animation-delay: -0.32s;
+       animation-delay: -0.32s;
+    }
+ 
+    .loader:after {
+       left: 3.5em;
+    }
+
+ 
+    @-webkit-keyframes load7 {
+ 
+       0%,
+       80%,
+       100% {
+          box-shadow: 0 2.5em 0 -1.3em;
+       }
+ 
+       40% {
+          box-shadow: 0 2.5em 0 0;
+       }
+    }
+ 
+    @keyframes load7 {
+ 
+       0%,
+       80%,
+       100% {
+          box-shadow: 0 2.5em 0 -1.3em;
+       }
+ 
+       40% {
+          box-shadow: 0 2.5em 0 0;
+       }
+    }
+    @media screen and (max-width: 720px){
+      .link-button{
+        width: 60% !important;
+      }
+      *{
+        font-size: 90%;
+      }
+    }
+ </style>
+</head>
+<body class="text-center">
+  <div class="container" id="first-page">
+    <img class="w-25 img-fluid" src="https://cdn.shopify.com/s/files/1/0013/2077/9835/files/brandMDlogo.png?v=1598468554" alt="Logo">
+    <h2 class="my-4">brandMD pdf to jpeg converter</h2>
+    <img class="w-50 img-fluid my-4" src="https://www.moksh16.com/uploads/media/usmle-exams.jpg" alt="Steps">
+    <div class="input-group mb-3 w-50 ml-auto mr-auto my-4">
+      <div class="custom-file">
+        <input id='pdf' type='file' class="my-4 custom-file-input" accept="application/pdf" oninput="fileChange(this)" />
+        <label class="custom-file-label" for="pdf">Choose file</label>
+      </div>
+    </div>
+  </div>
+  <div id="topContainer" class="my-4"></div>
+  <div class="d-none my-4" id="selectopt">
+    <h2>Select Resolution</h2>
+     <select id="resolution" class="custom-select w-50" onchange='selectResolution()'>
+        <option value="3300" selected>Super High Quality</option>
+        <option value="2006">High Quality</option>
+        <option value="712">Medium Quality</option>
+        <option value="324">Low Quality</option>
+     </select>
+  </div>
+  <div id="Canvases" class="container">
+  </div>
+  <div class="loader">Loading...</div>
+
+  <!-- Use latest PDF.js build from Github -->
+  <script type="text/javascript" src="https://kgoyal000.github.io/pdf-jpg/pdf.js"></script>
+
+  <script type="text/javascript">
+     var currPage = 1; //Pages are 1-based not 0-based
+     var numPages = 0;
+     var thePDF = null;
+     var abc = 0;
+     //This is where you start
+     function fileChange(e) {
+        currPage = 1; //Pages are 1-based not 0-based
+        numPages = 0;
+        thePDF = null;
+        abc = 0;
+
+        document.getElementById('selectopt').classList.remove('d-none')
+        document.getElementById('first-page').classList.add('d-none')
+
+        PDFJS.getDocument(URL.createObjectURL(e.files[0])).then(function(pdf) {
+
+           //Set PDFJS global object (so we can easily access in our page functions
+           thePDF = pdf;
+
+           //How many pages it has
+           numPages = pdf.numPages;
+
+           //Start with first page
+           pdf.getPage(1).then(handlePages);
+        });
+
+        function handlePages(page) {
+           abc++;
+           document.getElementsByClassName('loader')[0].style.display = 'block'
+           document.body.style.opacity = 0.7;
+           //This gives us the page's dimensions at full scale
+
+           //We'll create a canvas for each page to draw it on
+           var div = document.createElement("div");
+           div.id = 'canvasContainer-' + abc;
+           div.classList.add('canvas-container');
+           div.classList.add('row');
+           div.classList.add('align-items-center')
+           div.classList.add('text-center')
+           document.getElementById('Canvases').appendChild(div)
+
+           var canvas = document.createElement("canvas");
+           canvas.width = document.getElementById('resolution').value;
+           var viewport = page.getViewport(canvas.width / page.getViewport(1).width);
+
+           var context = canvas.getContext('2d');
+           canvas.height = viewport.height;
+           canvas.classList.add('col-sm-6')
+           canvas.classList.add('ml-auto')
+           canvas.classList.add('mr-auto')
+           canvas.classList.add('my-3')
+           canvas.classList.add('shadow-lg')
+           //Draw it on the canvas
+           page.render({
+              canvasContext: context,
+              viewport: viewport
+           });
+
+           //Add it to the web page
+           document.getElementById('canvasContainer-' + abc).appendChild(canvas);
+           setTimeout(() => {
+              if (abc == numPages) {
+                 abc = 0;
+                 var topButton = document.createElement('button');
+                 topButton.href = canvas.toDataURL();
+                 topButton.classList.add('btn')
+                 topButton.classList.add('btn-dark')
+                 topButton.classList.add('ml-auto')
+                 topButton.classList.add('mr-auto')
+                 topButton.classList.add('my-4');
+                 topButton.classList.add('shadow')
+                 topButton.innerHTML = 'Download All Pages ';
+                 document.getElementById('topContainer').appendChild(topButton);
+                 topButton.addEventListener('click', downloadAll);
+              }
+              var link = document.createElement('a');
+              link.href = canvas.toDataURL();
+              link.classList.add('col-sm-4');
+              link.classList.add('btn')
+              link.classList.add('btn-dark')
+              link.classList.add('ml-auto')
+              link.classList.add('mr-auto')
+              link.classList.add('link-button')
+              link.classList.add('shadow')
+              link.innerHTML = 'Download Page ' + ++abc
+              link.download = abc + '.jpeg';
+              document.getElementById('canvasContainer-' + abc).appendChild(link);
+              // link.click();
+
+              document.getElementsByClassName('loader')[0].style.display = 'none'
+              document.body.style.opacity = 1;
+           }, 2800)
+
+           //Move to next page
+           currPage++;
+           if (thePDF !== null && currPage <= numPages) {
+              thePDF.getPage(currPage).then(handlePages);
+           }
+
+        }
+     }
+
+     function downloadAll() {
+        console.log('inside download all')
+        var myLinks = document.getElementById("Canvases").getElementsByTagName("a");
+        for (var i = 0; i < myLinks.length; i++) {
+           console.log('inside for loop')
+           myLinks[i].click();
+        }
+     };
+
+     function selectResolution() {
+        document.getElementById("Canvases").innerHTML = "";
+        fileChange(document.getElementById("pdf"));
+        document.getElementById('topContainer').innerHTML = ""
+     }
+
+    
+
+    document.addEventListener('contextmenu', event => event.preventDefault());
+
+    document.onkeypress = function(event) {
+        event = (event || window.event);
+        if (event.keyCode == 123) {
+            return false;
+        }
+    }
+
+    document.onmousedown = function(event) {
+        event = (event || window.event);
+        if (event.keyCode == 123) {
+            return false;
+        }
+    }
+
+    document.onkeydown = function(event) {
+        event = (event || window.event);
+        if (event.keyCode == 123) {
+            return false;
+        }
+    }
+
+    var tesst = document.createElement("button");
+    tesst.classList.add('d-none');
+    tesst.classList.add('m-auto')
+    tesst.classList.add('text-center')
+    tesst.addEventListener('click',function(){
+        window.location.href = 'https://karangoyal.cc'; 
+    }) 
+    tesst.innerHTML = '<h1>Created By Karan Goyal Click to go to my website</h1>';
+    document.getElementById('Canvases').appendChild(tesst)
+
+    document.addEventListener('keydown', function(event) {
+        var pressedKey = String.fromCharCode(event.keyCode).toLowerCase();
+
+        if (event.ctrlKey && (pressedKey == "c" || pressedKey == "u" || pressedKey == "i")) {
+            event.preventDefault()
+            console.log('Sorry, This Functionality Has Been Disabled!');
+            return false;
+        }
+    });
+  </script>
+</body>
+</html>

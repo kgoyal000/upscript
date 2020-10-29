@@ -1,0 +1,7 @@
+keyboard==0.13.5
+pyHook @ file:///C:/Users/Karan%20%20GOYal/Desktop/a_c/pyHook-1.5.1-cp37-cp37m-win32.whl
+pypiwin32==223
+python-xlib==0.27
+PyUserInput==0.1
+pywin32==227
+six==1.15.0
